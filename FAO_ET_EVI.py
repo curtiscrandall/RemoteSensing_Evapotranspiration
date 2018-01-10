@@ -6,6 +6,7 @@ evapotranspiration over the point associated data from Arcmap. It will produce a
 arcmap and Joined with the original point file based on OBJECTID. This will associated each point (30m pixel) with a
 calculated average evapotranspiration value for that day. The numbers can then be correlated with Agrimet station data
 in the same pixel.
+WARNING: Depending on target area and image resolution, data file size varies greatly.
 """
 import csv, math, pandas as pd, numpy as np, matplotlib.mlab as mlab, matplotlib.pyplot as plt
 
