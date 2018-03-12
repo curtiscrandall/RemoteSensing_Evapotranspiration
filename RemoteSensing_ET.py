@@ -6,7 +6,7 @@ import math
 import pandas as pd
 
 
-# Files
+# File import; change the names depending on which image to process
 currentDate = 20170504
 dayInYear = 124
 img_csv = '20170504_EVI_BOII.csv'  # imported csv with evi values as 'grid_code'
@@ -71,7 +71,7 @@ TT = (900/(Tmean+273))*u2  # Temperature Term used to calculate Wind Term
 # EVI val
 
 
-# NDVI values
+# NDVI values; for now limiting values of zero to avoid nan ET values
 NDVIs = []
 for i in range(len(EVIs)):
     x = dfNDVIs[i]
@@ -81,7 +81,7 @@ for i in range(len(EVIs)):
 NDVIs = map(float, NDVIs)
 
 
-# Albedo values
+# Albedo values; for now limiting values of zero to avoid nan ET values
 ALBEDOs = []
 for i in range(len(EVIs)):
     x = ALBEDOs_grid[i]
@@ -91,7 +91,7 @@ for i in range(len(EVIs)):
 ALBEDOs = map(float, ALBEDOs)
 
 
-# Leaf Area Index values
+# Leaf Area Index values; for now limiting values of zero to avoid nan ET values
 LAIs = []
 for i in range(len(EVIs)):
     x = 10.*(NDVIs[i]**3.5)
@@ -103,7 +103,7 @@ for i in range(len(EVIs)):
 LAIs = map(float, LAIs)
 
 
-# Net Solar Radiation values
+# Net Solar Radiation values; for now limiting values of zero to avoid nan ET values
 RNs = []
 for i in range(len(EVIs)):
     x = Rnet_input*0.04184*(1.-ALBEDOs[i])
@@ -113,7 +113,7 @@ for i in range(len(EVIs)):
 RNs = map(float, RNs)
 
 
-# Calculate Soil Heat Flux
+# Calculate Soil Heat Flux; for now limiting values of zero to avoid nan ET values
 HEATFLUXs = []
 for i in range(len(EVIs)):
     x = 0.1 + 0.17 * math.exp((-.55)*LAIs[i])
@@ -180,7 +180,7 @@ df4 = pd.DataFrame({"ETrF_rs": ETrF_rs, "ETrF_os": ETrF_os, "ETra": EVI_ETra, "E
 df4.to_csv(img_csv2, index=False)
 
 
-# BOII Agrimet specific pixel data
+# BOII Agrimet specific pixel data; nutty work-around to extract attributes of an index
 BOII_Agrimet = df4.ix[58772]
 BOII_albedo = []
 BOII_EToa = []
@@ -223,6 +223,6 @@ df5.to_csv(img_csv4, index=False)
 with open(img_csv10, 'a') as f:
     df5.to_csv(f, header=False, index=False)
 
-# print df5
+# print df5 to check pixel stats
 print df4.ix[65564]
 print df4.ix[58772]
