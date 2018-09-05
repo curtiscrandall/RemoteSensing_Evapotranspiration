@@ -2,20 +2,22 @@
 #author: curtis crandall 2017
 
 # Imports
-import math
 import pandas as pd
+import numpy as np
+import arcpy
+import os
 
 
 # File import; change the names depending on which image to process
-currentDate = 20170504
-dayInYear = 124
-img_csv = '20170504_EVI_BOII.csv'  # imported csv with evi values as 'grid_code'
-img_csv2 = "20170504_ET_BOII.csv"  # new csv with calculated et
-img_csv3 = '20170504_NDVI_BOII.csv'  # imported csv with ndvi values
-img_csv4 = "Agrimet_BOII_modelData_current.csv"
-img_csv5 = '20170504_Albedo_BOII.csv'  # csv with albedo values
-img_csv10 = "Agrimet_BOII_modelData_appends.csv"
-csvRowCount = sum(1 for line in open('20170504_EVI_BOII.csv'))  # Get row count for array sizing
+currentDate = 20170527
+dayInYear = 147
+img_csv = '20170527_EVI_CALD.csv'  # imported csv with evi values as 'grid_code'
+img_csv2 = "20170527_ET_CALD.csv"  # new csv with calculated et
+img_csv3 = '20170527_NDVI_CALD.csv'  # imported csv with ndvi values
+img_csv4 = "Agrimet_CALD_modelData_current.csv"
+img_csv5 = '20170527_Albedo_CALD.csv'  # csv with albedo values
+img_csv10 = "Agrimet_CALD_modelData_appends.csv"
+csvRowCount = sum(1 for line in open('20170527_EVI_CALD.csv'))  # Get row count for array sizing
 
 
 # Open a data frame of evi values using pandas
@@ -30,17 +32,17 @@ ALBEDOs_grid = df3['ALBEDO'].values
 
 # Agrimet Station Inputs
 # AgMet_ETkm_input = 0  # k.m. reference ET inches per day
-AgMet_ETrs_input = 0.20  # ET alfalfa reference value inches per day
-AgMet_ETos_input = 0.17  # ET grass reference value inches per day
-Tmin_input = 45.60  # (MN) input temperature data in °F
-Tmax_input = 85.50  # (MX) input temperature data in °F
-Tmean_input = 65.68  # (MM) input temperature data in °F
-Tmean3_input = 53.91  # (MM) previous 3 day average temp in F
-Rnet_input = 596.97  # (SR) input solar radiation
-RH_mean_input = 57.81  # (TA) mean daily relative humidity as %
-Tdew_input = 45.34  # (YM) input dew point temperature data in °F
-uz_input = 1.50  # (UA) measured wind speed 2m above the ground surface, mph;
-z = 828  # elevation of station in m
+AgMet_ETrs_input = 0.26  # ET alfalfa reference value inches per day
+AgMet_ETos_input = 0.22  # ET grass reference value inches per day
+Tmin_input = 45.64  # (MN) input temperature data in °F
+Tmax_input = 81.70  # (MX) input temperature data in °F
+Tmean_input = 63.90  # (MM) input temperature data in °F
+Tmean3_input = 60.75  # (MM) previous 3 day average temp in F
+Rnet_input = 743.32  # (SR) input solar radiation
+RH_mean_input = 51.2  # (TA) mean daily relative humidity as %
+Tdew_input = 43.02  # (YM) input dew point temperature data in °F
+uz_input = 2.7  # (UA) measured wind speed 2m above the ground surface, mph;
+z = 825  # elevation of station in m
 
 # Input Conversions
 # AgMet_ETkm = AgMet_ETkm_input*25.4  # kimberly penman-monteith et in mm/day from Agrimet station
@@ -54,21 +56,18 @@ Tmean3 = (Tmean3_input-32)/1.8  # mean daily air temperature, °C
 Tdew = (Tdew_input-32)/1.8  # dew point temperature, °C
 
 # Other Variables
-es = 0.611*math.exp((17.27*Tmean)/(Tmean + 237.3))  # saturation vapor pressure, kPa
-ea = 0.611*math.exp((17.27*Tdew)/(Tdew + 237.3))  # preferred actual vapor pressure calculation, kPa
+es = 0.611*np.exp((17.27*Tmean)/(Tmean + 237.3))  # saturation vapor pressure, kPa
+ea = 0.611*np.exp((17.27*Tdew)/(Tdew + 237.3))  # preferred actual vapor pressure calculation, kPa
 svp_def = es-ea  # saturation vapor pressure deficit, kPa
 bc = (4.9*10**(-9))*((Tmean)**4)  # stephan boltzman constant
 P = 101.3*((293 - (.0065*z))/293)**5.26  # good; atmospheric pressure at elevation z
 gamma = .000665*P  # good; psychrometric constant, kPa °C-1
 h = 2  # height of the measurement above the ground surface, m.
-u2 = uz*(4.87/(math.log(67.8*h - 5.42)))  # wind speed at 2 m height, m s-1
-delta = (2503*math.exp((17.27*Tmean)/(Tmean + 237.3)))/((Tmean + 237.3)**2)  # slope of vapor pressure curve, kPa/ºC-1
+u2 = uz*(4.87/(np.log(67.8*h - 5.42)))  # wind speed at 2 m height, m s-1
+delta = (2503*np.exp((17.27*Tmean)/(Tmean + 237.3)))/((Tmean + 237.3)**2)  # slope of vapor pressure curve, kPa/ºC-1
 DT = delta/(delta+gamma*(1+.34*u2))  # Delta Term used to calculate Radiation Term
 PT = gamma/(delta+gamma*(1+.34*u2))  # Psi Term used to calculate Wind Term
 TT = (900/(Tmean+273))*u2  # Temperature Term used to calculate Wind Term
-
-
-# EVI val
 
 
 # NDVI values; for now limiting values of zero to avoid nan ET values
@@ -131,6 +130,7 @@ for i in range(len(EVIs)):
         x = 0
     ETrs.append(x)
 #ETrs = map(float, ETrs)
+
 # Calculate Actual ET from Alfalfa Reference ET
 EVI_ETra = []
 for i in range(len(EVIs)):
@@ -149,6 +149,7 @@ for i in range(len(EVIs)):
         x = 0
     ETos.append(x)
 #ETos = map(float, ETos)
+
 # Calculate Actual ET from Grass Reference ET
 EVI_EToa = []
 for i in range(len(EVIs)):
@@ -178,7 +179,6 @@ ETrF_os = map(float, ETrF_os)
 df4 = pd.DataFrame({"ETrF_rs": ETrF_rs, "ETrF_os": ETrF_os, "ETra": EVI_ETra, "EToa": EVI_EToa, "EVI": EVIs,
                     "NDVI": NDVIs, "RN": RNs, "LAI": LAIs, "Albedo": ALBEDOs, "SoilHeatFlux": HEATFLUXs})
 df4.to_csv(img_csv2, index=False)
-
 
 # BOII Agrimet specific pixel data; nutty work-around to extract attributes of an index
 BOII_Agrimet = df4.ix[58772]
@@ -223,6 +223,8 @@ df5.to_csv(img_csv4, index=False)
 with open(img_csv10, 'a') as f:
     df5.to_csv(f, header=False, index=False)
 
+
 # print df5 to check pixel stats
 print df4.ix[65564]
 print df4.ix[58772]
+
